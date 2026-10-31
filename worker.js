@@ -219,17 +219,21 @@ async function proxyCloudMoon(request) {
     });
   }
 
-  // Aggressively remove the CloudMoon description paragraph/div block
+  // Enhanced cleaner to completely remove dynamically-injected description elements and long SEO blocks
   function removeCloudMoonText() {
-    // Check all paragraphs, divs, and spans for the description text
-    const allElements = document.querySelectorAll('p, div, span, section');
+    // Target any element containing long SEO descriptions about CloudMoon platform
+    const allElements = document.querySelectorAll('div, p, span, section');
     allElements.forEach(el => {
-      if (el.textContent && el.textContent.includes("CloudMoon is a free cloud gaming platform")) {
-        // Find top-level container or block of this description text
+      // Check if text content contains signature phrases from that intro block
+      if (el.textContent && (
+          el.textContent.includes("CloudMoon is a free cloud gaming platform") ||
+          el.textContent.includes("offers over 300 popular games") ||
+          el.textContent.includes("low-spec phones can smoothly run games")
+      )) {
+        // Find the outermost wrapping block container to remove cleanly without breaking app UI
         let target = el;
-        while (target.parentNode && target.parentNode !== document.body && target.parentNode.nodeName !== 'MAIN' && target.parentNode.nodeName !== 'SECTION') {
-          // If parent contains other structural elements like game lists, stop climbing up
-          if (target.parentNode.querySelectorAll('img, canvas, button').length > 3) break;
+        while (target.parentNode && target.parentNode !== document.body && target.parentNode.nodeName !== 'MAIN') {
+          if (target.parentNode.querySelectorAll('canvas, iframe, video').length > 0) break;
           target = target.parentNode;
         }
         target.style.setProperty('display', 'none', 'important');
@@ -289,7 +293,7 @@ async function proxyCloudMoon(request) {
     fixButtons();
     removeAds();
     removeCloudMoonText();
-  }, 100);
+  }, 50);
   
   var observer = new MutationObserver(function() {
     fixButtons();
@@ -521,10 +525,10 @@ function getMainHTML() {
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Edpuzzle">
-    <link rel="manifest" href="/manifest.json?v=3">
-    <link rel="apple-touch-icon" href="/favicon.png?v=3">
+    <link rel="manifest" href="/manifest.json?v=4">
+    <link rel="apple-touch-icon" href="/favicon.png?v=4">
     
-    <link rel="icon" id="favicon" type="image/x-icon" href="/favicon.png?v=3">
+    <link rel="icon" id="favicon" type="image/x-icon" href="/favicon.png?v=4">
     <style>
         * {
             margin: 0;
@@ -838,13 +842,13 @@ function getManifest() {
     "orientation": "any",
     "icons": [
       {
-        "src": "/icon-192.png?v=3",
+        "src": "/icon-192.png?v=4",
         "sizes": "192x192",
         "type": "image/x-icon",
         "purpose": "any"
       },
       {
-        "src": "/icon-512.png?v=3",
+        "src": "/icon-512.png?v=4",
         "sizes": "512x512",
         "type": "image/x-icon",
         "purpose": "any"
@@ -857,8 +861,8 @@ function getManifest() {
 __name(getManifest, "getManifest");
 function getServiceWorker() {
   return `// CloudMoon InPlay Service Worker
-const CACHE_NAME = 'cloudmoon-v5';
-const RUNTIME_CACHE = 'cloudmoon-runtime-v5';
+const CACHE_NAME = 'cloudmoon-v6';
+const RUNTIME_CACHE = 'cloudmoon-runtime-v6';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
