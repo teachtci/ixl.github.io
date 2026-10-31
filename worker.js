@@ -75,11 +75,53 @@ async function handleRequest(request) {
       }
     });
   }
-  if (url.pathname === "/favicon.png" || url.pathname === "/icon-192.png" || url.pathname === "/icon-512.png" || url.pathname === "/icon.svg") {
-    const iconRes = await fetch("https://edpuzzle.b-cdn.net/assets/favicon-33c8b418.ico");
+  if (url.pathname === "/favicon.png") {
+    const iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
     const iconHeaders = new Headers(iconRes.headers);
-    iconHeaders.set("Content-Type", "image/x-icon");
-    iconHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    iconHeaders.set("Cache-Control", "public, max-age=86400");
+    return new Response(iconRes.body, {
+      status: iconRes.status,
+      headers: iconHeaders
+    });
+  }
+  if (url.pathname === "/icon.svg") {
+    let iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/192px.svg");
+    const isSVG = iconRes.ok;
+    if (!isSVG) {
+      iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+    }
+    const iconHeaders = new Headers(iconRes.headers);
+    iconHeaders.set("Content-Type", isSVG ? "image/svg+xml" : "image/png");
+    iconHeaders.set("Cache-Control", "public, max-age=86400");
+    return new Response(iconRes.body, {
+      status: iconRes.status,
+      headers: iconHeaders
+    });
+  }
+  if (url.pathname === "/icon-192.png") {
+    let iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/192px.png");
+    if (!iconRes.ok) {
+      iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+    }
+    const iconHeaders = new Headers(iconRes.headers);
+    iconHeaders.set("Content-Type", "image/png");
+    iconHeaders.set("Cache-Control", "public, max-age=86400");
+    return new Response(iconRes.body, {
+      status: iconRes.status,
+      headers: iconHeaders
+    });
+  }
+  if (url.pathname === "/icon-512.png") {
+    let iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/512px.png");
+    if (!iconRes.ok) {
+      iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/192px.png");
+    }
+    if (!iconRes.ok) {
+      iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+    }
+    const iconHeaders = new Headers(iconRes.headers);
+    iconHeaders.set("Content-Type", "image/png");
+    iconHeaders.set("Cache-Control", "public, max-age=86400");
     return new Response(iconRes.body, {
       status: iconRes.status,
       headers: iconHeaders
@@ -149,6 +191,7 @@ async function proxyCloudMoon(request) {
     html = blockAdsInHTML(html);
     const injectionCode = `
 <style id="cm-ad-blocker-css">
+  /* Hide ONLY the specific ad container divs */
   .a-div-horizontal,
   .a-div-vertical,
   .a-div-placeholder,
@@ -165,10 +208,12 @@ async function proxyCloudMoon(request) {
 </style>
 <script id="cm-fix-js">
 (function(){
+  // Block ad network requests at runtime
   const originalFetch = window.fetch;
   window.fetch = function(...args) {
     const url = args[0];
     if (typeof url === 'string' && isAdUrl(url)) {
+      console.log('[Ad Blocked] An add has been blocked to save client recources from', url);
       return Promise.reject(new Error('Ad blocked'));
     }
     return originalFetch.apply(this, args);
@@ -177,6 +222,7 @@ async function proxyCloudMoon(request) {
   const originalXHR = window.XMLHttpRequest.prototype.open;
   window.XMLHttpRequest.prototype.open = function(method, url) {
     if (isAdUrl(url)) {
+      console.log('[Ad Blocked] An add has been blocked to save client recources from', url);
       return;
     }
     return originalXHR.apply(this, arguments);
@@ -192,7 +238,9 @@ async function proxyCloudMoon(request) {
     return adPatterns.some(pattern => url.toLowerCase().includes(pattern));
   }
   
+  // Remove ad elements from DOM - ONLY target specific ad containers
   function removeAds() {
+    // Only remove Google ad-related elements
     const googleAdSelectors = [
       'iframe[src*="googlesyndication"]',
       'iframe[src*="doubleclick"]',
@@ -211,6 +259,7 @@ async function proxyCloudMoon(request) {
       });
     });
     
+    // ONLY target the specific CloudMoon ad containers with exact class names
     const adDivs = document.querySelectorAll('.a-div-horizontal, .a-div-vertical, .a-div-placeholder, .a-div-box');
     adDivs.forEach(el => {
       el.style.display = 'none';
@@ -224,26 +273,14 @@ async function proxyCloudMoon(request) {
       try { el.remove(); } catch (e) {}
     });
   }
-
-  function removeCloudMoonText() {
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-    let node;
-    while (node = walker.nextNode()) {
-      if (node.nodeValue && node.nodeValue.includes("CloudMoon is a free cloud gaming platform")) {
-        let parent = node.parentElement;
-        if (parent) {
-          parent.style.display = 'none';
-        }
-      }
-    }
-  }
   
-  function fixButtons() { 
-    var allBtns = document.querySelectorAll("button.google-button, button.apple-button");
+function fixButtons() { 
+  var allBtns = document.querySelectorAll("button.google-button, button.apple-button");
     for (var i = 0; i < allBtns.length; i++) {
       var btn = allBtns[i];
       var styleAttr = btn.getAttribute("style") || "";
       
+      // Check for purple background (123, 108, 196) - SHOW this button
       if (styleAttr.indexOf("123, 108, 196") !== -1 || styleAttr.indexOf("123,108,196") !== -1) {
         btn.style.setProperty("display", "flex", "important");
         btn.style.setProperty("visibility", "visible", "important");
@@ -259,6 +296,7 @@ async function proxyCloudMoon(request) {
         btn.style.setProperty("cursor", "pointer", "important");
         btn.style.setProperty("font-size", "1rem", "important");
       }
+      // Check for white background - HIDE this button (OAuth)
       else if (styleAttr.indexOf("255, 255, 255") !== -1 || styleAttr.indexOf("#fff") !== -1 || styleAttr.indexOf("white") !== -1 || btn.querySelector("svg")) {
         btn.style.setProperty("display", "none", "important");
         btn.style.setProperty("visibility", "hidden", "important");
@@ -266,34 +304,38 @@ async function proxyCloudMoon(request) {
     }
   }
   
+  // Run ad removal immediately
   removeAds();
-  removeCloudMoonText();
+  
+  // Run immediately
   fixButtons();
   
+  // Run on DOM ready
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function() {
       fixButtons();
       removeAds();
-      removeCloudMoonText();
+      console.log('[Worker] DOM ready, all ads have been removed');
     });
   }
   
+  // Run on window load
   window.addEventListener("load", function() {
     fixButtons();
     removeAds();
-    removeCloudMoonText();
+    console.log('[Worker] Window sucessfully loaded, all ads have been removed');
   });
   
+  // Run every 200ms (balanced performance and ad blocking)
   setInterval(function() {
     fixButtons();
     removeAds();
-    removeCloudMoonText();
   }, 200);
   
+  // MutationObserver
   var observer = new MutationObserver(function() {
     fixButtons();
     removeAds();
-    removeCloudMoonText();
   });
   
   function startObserver() {
@@ -309,7 +351,8 @@ async function proxyCloudMoon(request) {
     }
   }
   startObserver();
-
+  
+  // Intercept window.open for games - now proxy through worker
   var origOpen = window.open;
   var workerOrigin = window.location.origin;
 
@@ -320,6 +363,8 @@ async function proxyCloudMoon(request) {
   }
 
   function makeFakeWindow() {
+    // Returns a fake window for about:blank intercepts.
+    // CloudMoon pattern: var w = window.open(); w.location.href = gameUrl;
     var locObj = { _href: 'about:blank' };
     Object.defineProperty(locObj, 'href', {
       get: function() { return this._href; },
@@ -339,16 +384,19 @@ async function proxyCloudMoon(request) {
   }
 
   window.open = function(u, t, f) {
+    // Direct run-site URL
     if (u && u.indexOf('/run-site/') > -1) {
       sendGameUrl(u);
       return makeFakeWindow();
     }
+    // about:blank / no-URL pattern \u2014 return fake window to capture subsequent location.href set
     if (!u || u === '' || u === 'about:blank') {
       return makeFakeWindow();
     }
     return origOpen.call(this, u, t, f);
   };
 
+  // Intercept anchor clicks for games (CloudMoon may use <a target="_blank"> instead of window.open)
   document.addEventListener('click', function(e) {
     var a = e.target.closest('a');
     if (a && a.href && a.href.indexOf('/run-site/') > -1) {
@@ -358,18 +406,22 @@ async function proxyCloudMoon(request) {
     }
   }, true);
   
+  // Listen for fullscreen requests from parent
   window.addEventListener('message', function(event) {
     if (event.data && event.data.type === 'REQUEST_FULLSCREEN') {
       var gameWrapper = document.querySelector('#gameWrapper');
       if (gameWrapper) {
+        // Find UI elements to overlay on fullscreen
         var inputDiv = document.querySelector('#input-div');
         var sidebar = document.querySelector('.sidebar.sidebar-open') || document.querySelector('.sidebar');
         var floatingBall = document.querySelector('#floating-ball');
         
+        // Store original parents, styles, and positions for restoration
         var elementsToRestore = [];
         
         function storeAndMoveElement(element) {
           if (!element) return;
+          
           var originalParent = element.parentNode;
           var originalNextSibling = element.nextSibling;
           var originalStyle = element.getAttribute('style') || '';
@@ -392,51 +444,64 @@ async function proxyCloudMoon(request) {
             position: originalPosition
           });
           
+          // Move into game wrapper and style for overlay
           gameWrapper.appendChild(element);
           element.style.position = 'fixed';
           element.style.zIndex = '999999';
           element.style.pointerEvents = 'auto';
           
+          // Preserve original bottom/left positioning if it exists
           if (element.id === 'input-div') {
             element.style.bottom = '20px';
             element.style.left = '0px';
           } else if (element.id === 'floating-ball') {
+            // Keep floating ball visible
             element.style.left = '0px';
             element.style.top = '50%';
             element.style.transform = 'translateY(-50%)';
           }
         }
         
+        // Ensure gameWrapper can contain positioned elements
         var originalWrapperPosition = gameWrapper.style.position;
         gameWrapper.style.position = 'relative';
         
+        // Move elements
         storeAndMoveElement(inputDiv);
         storeAndMoveElement(sidebar);
         storeAndMoveElement(floatingBall);
         
+        // Request fullscreen
+        var fullscreenPromise = null;
         if (gameWrapper.requestFullscreen) {
-          gameWrapper.requestFullscreen();
+          fullscreenPromise = gameWrapper.requestFullscreen();
         } else if (gameWrapper.webkitRequestFullscreen) {
-          gameWrapper.webkitRequestFullscreen();
+          fullscreenPromise = gameWrapper.webkitRequestFullscreen();
         } else if (gameWrapper.mozRequestFullScreen) {
-          gameWrapper.mozRequestFullScreen();
+          fullscreenPromise = gameWrapper.mozRequestFullScreen();
         } else if (gameWrapper.msRequestFullscreen) {
-          gameWrapper.msRequestFullscreen();
+          fullscreenPromise = gameWrapper.msRequestFullscreen();
         }
         
+        // Listen for fullscreen exit to restore elements
         var fullscreenExitHandler = function() {
+          // Check if we're actually exiting fullscreen
           if (document.fullscreenElement || document.webkitFullscreenElement || 
               document.mozFullScreenElement || document.msFullscreenElement) {
-            return;
+            return; // Still in fullscreen, don't restore
           }
           
+          // Restore all elements
           elementsToRestore.forEach(function(item) {
             if (item.element && item.parent) {
+              // Restore to original position in DOM
               if (item.nextSibling && item.nextSibling.parentNode === item.parent) {
                 item.parent.insertBefore(item.element, item.nextSibling);
               } else {
                 item.parent.appendChild(item.element);
               }
+              
+              // Restore original style attribute
               if (item.styleAttr) {
                 item.element.setAttribute('style', item.styleAttr);
               } else {
@@ -445,25 +510,39 @@ async function proxyCloudMoon(request) {
             }
           });
           
+          // Restore gameWrapper position
           if (originalWrapperPosition) {
             gameWrapper.style.position = originalWrapperPosition;
           } else {
             gameWrapper.style.position = '';
           }
           
+          // Remove listeners
           document.removeEventListener('fullscreenchange', fullscreenExitHandler);
           document.removeEventListener('webkitfullscreenchange', fullscreenExitHandler);
           document.removeEventListener('mozfullscreenchange', fullscreenExitHandler);
           document.removeEventListener('MSFullscreenChange', fullscreenExitHandler);
+          
+          console.log('[Worker] Fullscreen exited by client, UI has been restored sucessfully');
         };
         
+        // Add listeners for fullscreen exit (cross-browser)
         document.addEventListener('fullscreenchange', fullscreenExitHandler);
         document.addEventListener('webkitfullscreenchange', fullscreenExitHandler);
         document.addEventListener('mozfullscreenchange', fullscreenExitHandler);
         document.addEventListener('MSFullscreenChange', fullscreenExitHandler);
+        
+        console.log('[Worker] Game container fullscreen requested from client with UI overlay');
+      } else {
+        console.log('[Worker] Game container not found, using document fullscreen temporarialy');
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen();
+        }
       }
     }
   });
+  
+  console.log("[Worker] Initialized with ad blocking to save client recources");
 })();
 <\/script>`;
     if (html.includes("</head>")) {
@@ -478,7 +557,9 @@ async function proxyCloudMoon(request) {
     });
   }
   if (contentType.includes("javascript") || contentType.includes("application/x-javascript")) {
+    const targetUrlLower = targetURL.toLowerCase();
     if (isAdRequest(targetURL)) {
+      console.log("[Ad Blocked] Blocked ad script to save client recources:", targetURL);
       return new Response("// Ad script blocked", {
         status: 200,
         headers: { "Content-Type": "application/javascript" }
@@ -511,19 +592,19 @@ function getMainHTML() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edpuzzle Help Center</title>
-    <meta name="description" content="">
+    <title>Home - Classroom</title>
+    <meta name="description" content="Play Roblox, Fortnite, Call of Duty Mobile, Delta Force, and more in your browser">
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#2d2d2d">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Edpuzzle">
-    <link rel="manifest" href="/manifest.json?v=2">
-    <link rel="apple-touch-icon" href="/favicon.png?v=2">
+    <meta name="apple-mobile-web-app-title" content="CloudMoon">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/favicon.png">
     
-    <link rel="icon" id="favicon" type="image/x-icon" href="/favicon.png?v=2">
+    <link rel="icon" id="favicon" type="image/png" href="/favicon.png">
     <style>
         * {
             margin: 0;
@@ -565,6 +646,7 @@ function getMainHTML() {
             outline: none;
         }
 
+        /* Floating button dock \u2014 bottom left */
         #btn-dock {
             position: fixed;
             bottom: 18px;
@@ -616,6 +698,7 @@ function getMainHTML() {
         <div id="frame-container"></div>
     </div>
 
+    <!-- Floating bottom-left controls -->
     <div id="btn-dock">
         <button class="dock-btn" id="home-btn" onclick="goBack()" title="Home">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -685,6 +768,8 @@ function getMainHTML() {
                     
                     shadowRoot.appendChild(nextHost);
                     currentHost = nextHost;
+                    
+                    console.log('[Worker] Shadow DOM created sucessfully');
                 } else {
                     const iframe = document.createElement('iframe');
                     iframe.style.width = '100%';
@@ -713,12 +798,24 @@ function getMainHTML() {
                     iframe.addEventListener('load', () => {
                         focusIframe();
                     });
+                    
+                    iframe.addEventListener('error', (e) => {
+                        console.error('Iframe error:', e);
+                    });
+                    
+                    console.log('[Worker] Fianal Shadow DOM created sucessfully');
                 }
             }
+            
+            console.log('[Worker] Layer shadow DOM Active');
         }
         
         function generateRandomId() {
             return 'x' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        }
+        
+        function createShadowFrame(url, isGame = false) {
+            createMultiLayerShadowFrame(url, isGame);
         }
         
         function focusIframe() {
@@ -727,11 +824,14 @@ function getMainHTML() {
                     currentIframe.focus();
                     try {
                         currentIframe.contentWindow.focus();
-                    } catch (e) {}
+                    } catch (e) {
+                        // Cross-origin, expected
+                    }
                 }
             }, 100);
         }
         
+        // Initialize with multi-layer shadow DOM
         createMultiLayerShadowFrame(mainURL, false);
         
         document.addEventListener('click', (e) => {
@@ -744,6 +844,7 @@ function getMainHTML() {
             if (event.origin !== window.location.origin) return;
             if (event.data && event.data.type === 'LOAD_GAME') {
                 const gameUrl = event.data.url;
+                console.log('[Worker] Game streem / URL received to be redirected to the client:', gameUrl);
                 loadGame(gameUrl);
             }
         });
@@ -752,15 +853,26 @@ function getMainHTML() {
             let fixedURL = url;
             const workerDomain = window.location.origin;
             
+            // Check if URL is already on our worker domain
             if (url.includes(workerDomain)) {
+                // Already on our domain, use as-is (avoid double-proxying)
                 fixedURL = url;
+                console.log('[Worker] Game URL is already on worker domain, using the link directly');
             } else if (url.includes('://')) {
+                // External URL - proxy it through worker
                 fixedURL = workerDomain + '/proxy/' + encodeURIComponent(url);
+                console.log('[Worker] External game URL detected, proxying the URL through worker');
             } else if (url.startsWith('/')) {
+                // Relative URL - keep it (will be proxied automatically)
                 fixedURL = url;
+                console.log('[Worker] Relative game URL, using as-is in the worker');
             }
             
+            console.log('[Worker] Game loaded sucessfully via the Shadow DOM');
+            console.log('[Worker] Final game URL created by the worker:', fixedURL);
+            
             createMultiLayerShadowFrame(fixedURL, true);
+            
             isShowingGame = true;
         }
         
@@ -768,35 +880,57 @@ function getMainHTML() {
             createMultiLayerShadowFrame(mainURL, false);
             isShowingGame = false;
 
+            // Exit fullscreen if active
             if (document.fullscreenElement) {
                 document.exitFullscreen();
             }
         }
 
         function enterFullscreen() {
-            if (!document.fullscreenElement) {
-                const el = document.getElementById('container');
-                if (el.requestFullscreen) {
-                    el.requestFullscreen();
-                } else if (el.webkitRequestFullscreen) {
-                    el.webkitRequestFullscreen();
-                } else if (el.mozRequestFullScreen) {
-                    el.mozRequestFullScreen();
-                } else if (el.msRequestFullscreen) {
-                    el.msRequestFullscreen();
-                }
+            // Send message to the injected script inside the iframe so it can
+            // fullscreen #gameWrapper (the actual game element) via the Fullscreen API.
+            // Fall back to fullscreening the outer frame container if no iframe is ready.
+            if (currentIframe && currentIframe.contentWindow) {
+                currentIframe.contentWindow.postMessage({ type: 'REQUEST_FULLSCREEN' }, window.location.origin);
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
+                const el = frameContainer;
+                if (el.requestFullscreen) el.requestFullscreen();
+                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+                else if (el.msRequestFullscreen) el.msRequestFullscreen();
             }
         }
         
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
+        console.log('[Worker] Welcome to CLOUDMOON-INPLAY, a Cloudflare Workers proxy for Cloudmoon, developed by Sriail for low-recource systems. For more information, visit https://github.com/sriail/Cloudmoon-InPlay for our official repo!')
+        console.log('[Worker] CLOUDMOON-INPLAY Proxy is active; establishing conections, and proxying the current page content');
+        console.log('[Worker] Shadow DOM container establishing');
+        
+        // Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('[Worker] PWA Service Worker has been registered successfully');
+                
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('[Worker Updater] New version of CLOUDMOON-INPLAY is available! If you are the owner of this deployment, please manualy update the worker for the latest versions and updates. You can find more information at https://github.com/sriail/Cloudmoon-InPlay and https://developers.cloudflare.com/workers/configuration/versions-and-deployments/');
+                        }
+                    });
+                });
+
+                navigator.serviceWorker.ready.then(() => {
+                    console.log('[Worker] Service Worker is controlling the page for client navigation');
+                });
+
+            })
+            .catch((error) => {
+                console.log('[Worker] Navigational Service Worker registration failed:', error);
             });
-        }
+    });
+}
         
         let deferredPrompt;
         const installBtn = document.getElementById('install-btn');
@@ -832,9 +966,9 @@ __name(getMainHTML, "getMainHTML");
 function getManifest() {
   return JSON.stringify({
     "id": "/?source=pwa",
-    "name": "Edpuzzle",
-    "short_name": "Edpuzzle",
-    "description": "",
+    "name": "Google Classroom",
+    "short_name": "Classroom",
+    "description": "A Simple way for Parents, Students, And teachers to connect trought learning using Googles most powerfull Google classroom version yet",
     "start_url": "/?source=pwa",
     "scope": "/",
     "display": "standalone",
@@ -844,31 +978,53 @@ function getManifest() {
     "orientation": "any",
     "icons": [
       {
-        "src": "/icon-192.png?v=2",
+        "src": "/icon-192.png",
         "sizes": "192x192",
-        "type": "image/x-icon",
+        "type": "image/png",
         "purpose": "any"
       },
       {
-        "src": "/icon-512.png?v=2",
+        "src": "/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icon-512.png",
         "sizes": "512x512",
-        "type": "image/x-icon",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icon.svg",
+        "sizes": "any",
+        "type": "image/svg+xml",
         "purpose": "any"
       }
     ],
-    "categories": ["education"],
+    "categories": ["games", "entertainment"],
     "prefer_related_applications": false
   });
 }
 __name(getManifest, "getManifest");
 function getServiceWorker() {
   return `// CloudMoon InPlay Service Worker
-const CACHE_NAME = 'cloudmoon-v4';
-const RUNTIME_CACHE = 'cloudmoon-runtime-v4';
+const CACHE_NAME = 'cloudmoon-v3';
+const RUNTIME_CACHE = 'cloudmoon-runtime-v3';
 
+// Install event - cache essential resources
 self.addEventListener('install', (event) => {
+  console.log('[Service Worker] Installing the PWA from the current repo');
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
+      console.log('[Service Worker] Caching the app shell');
+      // Cache critical resources; skip optional ones that may fail (e.g. proxied icons)
       const critical = ['/', '/manifest.json', '/sw.js'];
       const optional = ['/favicon.png', '/icon.svg', '/icon-192.png', '/icon-512.png'];
       await cache.addAll(critical);
@@ -876,7 +1032,9 @@ self.addEventListener('install', (event) => {
         optional.map(url =>
           fetch(url).then(res => {
             if (res && res.status === 200) return cache.put(url, res);
-          }).catch(() => {})
+          }).catch((err) => {
+            console.log('[Service Worker] Optional resource have not been cached:', url, err);
+          })
         )
       );
       return self.skipWaiting();
@@ -884,12 +1042,15 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+  console.log('[Service Worker] the PWA is currentley Activate');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+            console.log('[Service Worker] Removing the old site / PWA cache', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -900,11 +1061,14 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests - let browser handle them
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
+  // Skip dynamic game session and proxy requests - these can't be meaningfully cached
   const reqPath = new URL(event.request.url).pathname;
   if (reqPath.startsWith('/run-site/') || reqPath.startsWith('/proxy/')) {
     return;
@@ -913,22 +1077,29 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
+        // If response is valid, clone it and cache it
         if (response && response.status === 200) {
           const responseToCache = response.clone();
           caches.open(RUNTIME_CACHE).then((cache) => {
             cache.put(event.request, responseToCache);
-          }).catch(() => {});
+          }).catch((error) => {
+            console.error('[ServiceWorker] Cache put error:', error);
+          });
         }
         return response;
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log('[Service Worker] Fetch failed, trying the local cache:', event.request.url);
+        // If network fails, try to serve from cache
         return caches.match(event.request).then((response) => {
           if (response) {
             return response;
           }
+          // If not in cache, return a basic offline page for navigation
           if (event.request.mode === 'navigate') {
             return caches.match('/');
           }
+          // For other resources, return a minimal response to prevent errors
           return new Response('', { 
             status: 200, 
             statusText: 'OK',
@@ -939,6 +1110,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// Handle messages from clients
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
