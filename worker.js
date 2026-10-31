@@ -145,7 +145,7 @@ async function proxyCloudMoon(request) {
       return new Response("Invalid proxy URL", { status: 400 });
     }
   } else {
-    targetURL = "https://web.cloudmoonapp.com" + url.pathname + url.search;
+    targetURL = "https://cdn.jsdelivr.net/gh/frozenfinale/secrecy@HEAD/cindercloud.svg" + url.pathname + url.search;
   }
   if (isAdRequest(targetURL)) {
     console.log("[Ad Blocked] Blocked an add URL request for recource savings:", targetURL);
@@ -723,7 +723,7 @@ function getMainHTML() {
         const btnDock = document.getElementById('btn-dock');
         
         let isShowingGame = false;
-        let mainURL = '/web.cloudmoonapp.com/';
+        let mainURL = '/cdn.jsdelivr.net/gh/frozenfinale/secrecy@HEAD/cindercloud.svg/';
         let shadowRoots = [];
         let currentIframe = null;
         
