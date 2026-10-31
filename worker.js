@@ -76,7 +76,7 @@ async function handleRequest(request) {
     });
   }
   if (url.pathname === "/favicon.png") {
-    const iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+    const iconRes = await fetch("https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://edpuzzle.com&size=32");
     const iconHeaders = new Headers(iconRes.headers);
     iconHeaders.set("Cache-Control", "public, max-age=86400");
     return new Response(iconRes.body, {
@@ -88,7 +88,7 @@ async function handleRequest(request) {
     let iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/192px.svg");
     const isSVG = iconRes.ok;
     if (!isSVG) {
-      iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+      iconRes = await fetch("https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://edpuzzle.com&size=128");
     }
     const iconHeaders = new Headers(iconRes.headers);
     iconHeaders.set("Content-Type", isSVG ? "image/svg+xml" : "image/png");
@@ -98,10 +98,10 @@ async function handleRequest(request) {
       headers: iconHeaders
     });
   }
-  if (url.pathname === "/icon-192.png") {
-    let iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/192px.png");
+  if (url.pathname === "/logo.png?c=1bxid64Mup7aczewSAYMX&t=1789737603717") {
+    let iconRes = await fetch("https://cdn.brandfetch.io/idVbgxSWlo/w/128/h/128/theme/dark/logo.png?c=1bxid64Mup7aczewSAYMX&t=1789737603717");
     if (!iconRes.ok) {
-      iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+      iconRes = await fetch("https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://edpuzzle.com&size=32");
     }
     const iconHeaders = new Headers(iconRes.headers);
     iconHeaders.set("Content-Type", "image/png");
@@ -111,13 +111,13 @@ async function handleRequest(request) {
       headers: iconHeaders
     });
   }
-  if (url.pathname === "/icon-512.png") {
-    let iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/512px.png");
+  if (url.pathname === "/logo.png?c=1bxid64Mup7aczewSAYMX&t=1789737603717") {
+    let iconRes = await fetch("https://cdn.brandfetch.io/idVbgxSWlo/w/128/h/128/theme/dark/logo.png?c=1bxid64Mup7aczewSAYMX&t=1789737603717");
     if (!iconRes.ok) {
-      iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/192px.png");
+      iconRes = await fetch("https://cdn.brandfetch.io/idVbgxSWlo/w/128/h/128/theme/dark/logo.png?c=1bxid64Mup7aczewSAYMX&t=1789737603717");
     }
     if (!iconRes.ok) {
-      iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+      iconRes = await fetch("https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://edpuzzle.com&size=32");
     }
     const iconHeaders = new Headers(iconRes.headers);
     iconHeaders.set("Content-Type", "image/png");
