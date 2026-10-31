@@ -76,7 +76,7 @@ async function handleRequest(request) {
     });
   }
   if (url.pathname === "/favicon.png") {
-    const iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+    const iconRes = await fetch("https://edpuzzle.b-cdn.net/assets/favicon-33c8b418.ico");
     const iconHeaders = new Headers(iconRes.headers);
     iconHeaders.set("Cache-Control", "public, max-age=86400");
     return new Response(iconRes.body, {
@@ -85,13 +85,13 @@ async function handleRequest(request) {
     });
   }
   if (url.pathname === "/icon.svg") {
-    let iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/192px.svg");
-    const isSVG = iconRes.ok;
+    let iconRes = await fetch("https://edpuzzle.b-cdn.net/assets/favicon-33c8b418.ico");
+    const isSVG = iconRes.ok && contentType.includes("svg");
     if (!isSVG) {
-      iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+      iconRes = await fetch("https://edpuzzle.b-cdn.net/assets/favicon-33c8b418.ico");
     }
     const iconHeaders = new Headers(iconRes.headers);
-    iconHeaders.set("Content-Type", isSVG ? "image/svg+xml" : "image/png");
+    iconHeaders.set("Content-Type", isSVG ? "image/svg+xml" : "image/x-icon");
     iconHeaders.set("Cache-Control", "public, max-age=86400");
     return new Response(iconRes.body, {
       status: iconRes.status,
@@ -99,12 +99,12 @@ async function handleRequest(request) {
     });
   }
   if (url.pathname === "/icon-192.png") {
-    let iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/192px.png");
+    let iconRes = await fetch("https://edpuzzle.b-cdn.net/assets/favicon-33c8b418.ico");
     if (!iconRes.ok) {
-      iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+      iconRes = await fetch("https://edpuzzle.b-cdn.net/assets/favicon-33c8b418.ico");
     }
     const iconHeaders = new Headers(iconRes.headers);
-    iconHeaders.set("Content-Type", "image/png");
+    iconHeaders.set("Content-Type", "image/x-icon");
     iconHeaders.set("Cache-Control", "public, max-age=86400");
     return new Response(iconRes.body, {
       status: iconRes.status,
@@ -112,15 +112,15 @@ async function handleRequest(request) {
     });
   }
   if (url.pathname === "/icon-512.png") {
-    let iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/512px.png");
+    let iconRes = await fetch("https://edpuzzle.b-cdn.net/assets/favicon-33c8b418.ico");
     if (!iconRes.ok) {
-      iconRes = await fetch("https://fonts.gstatic.com/s/i/productlogos/classroom/v8/192px.png");
+      iconRes = await fetch("https://edpuzzle.b-cdn.net/assets/favicon-33c8b418.ico");
     }
     if (!iconRes.ok) {
-      iconRes = await fetch("https://ssl.gstatic.com/classroom/favicon.png");
+      iconRes = await fetch("https://edpuzzle.b-cdn.net/assets/favicon-33c8b418.ico");
     }
     const iconHeaders = new Headers(iconRes.headers);
-    iconHeaders.set("Content-Type", "image/png");
+    iconHeaders.set("Content-Type", "image/x-icon");
     iconHeaders.set("Cache-Control", "public, max-age=86400");
     return new Response(iconRes.body, {
       status: iconRes.status,
@@ -389,7 +389,7 @@ function fixButtons() {
       sendGameUrl(u);
       return makeFakeWindow();
     }
-    // about:blank / no-URL pattern \u2014 return fake window to capture subsequent location.href set
+    // about:blank / no-URL pattern — return fake window to capture subsequent location.href set
     if (!u || u === '' || u === 'about:blank') {
       return makeFakeWindow();
     }
@@ -592,8 +592,8 @@ function getMainHTML() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - Classroom</title>
-    <meta name="description" content="Play Roblox, Fortnite, Call of Duty Mobile, Delta Force, and more in your browser">
+    <title>Edpuzzle Help Center</title>
+    <meta name="description" content="">
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#2d2d2d">
@@ -646,7 +646,7 @@ function getMainHTML() {
             outline: none;
         }
 
-        /* Floating button dock \u2014 bottom left */
+        /* Floating button dock — bottom left */
         #btn-dock {
             position: fixed;
             bottom: 18px;
@@ -966,9 +966,9 @@ __name(getMainHTML, "getMainHTML");
 function getManifest() {
   return JSON.stringify({
     "id": "/?source=pwa",
-    "name": "Google Classroom",
-    "short_name": "Classroom",
-    "description": "A Simple way for Parents, Students, And teachers to connect trought learning using Googles most powerfull Google classroom version yet",
+    "name": "Edpuzzle",
+    "short_name": "Edpuzzle",
+    "description": "",
     "start_url": "/?source=pwa",
     "scope": "/",
     "display": "standalone",
@@ -1008,7 +1008,7 @@ function getManifest() {
         "purpose": "any"
       }
     ],
-    "categories": ["games", "entertainment"],
+    "categories": ["education"],
     "prefer_related_applications": false
   });
 }
