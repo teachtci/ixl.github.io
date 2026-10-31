@@ -1,5 +1,5 @@
 name = "google-classroom"
-account_id = "" # <-- Add your Cloudflare account ID
+account_id = "783b5a9bd260ee5da7335a2755a61d45" # <-- Add your Cloudflare account ID
 workers_dev = true
 compatibility_date = "2026-01-21"
 main = "worker.js"
