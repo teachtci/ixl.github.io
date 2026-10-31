@@ -1,3 +1,4 @@
+
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
@@ -106,8 +107,10 @@ async function proxyCloudMoon(request) {
     targetURL = "https://web.cloudmoonapp.com" + url.pathname + url.search;
   }
   if (isAdRequest(targetURL)) {
+    console.log("[Ad Blocked] Blocked an add URL request for recource savings:", targetURL);
     return new Response("", { status: 204 });
   }
+  console.log("Proxying:", targetURL);
   const headers = new Headers(request.headers);
   headers.set("Host", new URL(targetURL).host);
   headers.delete("cf-connecting-ip");
@@ -127,7 +130,11 @@ async function proxyCloudMoon(request) {
   try {
     response = await fetch(proxyRequest);
   } catch (error) {
+    console.error("Proxy fetch failed:", error);
     return new Response("Failed to fetch resource", { status: 502 });
+  }
+  if (response.status === 404) {
+    console.log("[Worker] Resource could not found (404):", targetURL);
   }
   const newHeaders = new Headers(response.headers);
   newHeaders.set("Access-Control-Allow-Origin", "*");
@@ -219,28 +226,17 @@ async function proxyCloudMoon(request) {
     });
   }
 
-  // Enhanced cleaner to completely remove dynamically-injected description elements and long SEO blocks
   function removeCloudMoonText() {
-    // Target any element containing long SEO descriptions about CloudMoon platform
-    const allElements = document.querySelectorAll('div, p, span, section');
-    allElements.forEach(el => {
-      // Check if text content contains signature phrases from that intro block
-      if (el.textContent && (
-          el.textContent.includes("CloudMoon is a free cloud gaming platform") ||
-          el.textContent.includes("offers over 300 popular games") ||
-          el.textContent.includes("low-spec phones can smoothly run games")
-      )) {
-        // Find the outermost wrapping block container to remove cleanly without breaking app UI
-        let target = el;
-        while (target.parentNode && target.parentNode !== document.body && target.parentNode.nodeName !== 'MAIN') {
-          if (target.parentNode.querySelectorAll('canvas, iframe, video').length > 0) break;
-          target = target.parentNode;
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    let node;
+    while (node = walker.nextNode()) {
+      if (node.nodeValue && node.nodeValue.includes("CloudMoon is a free cloud gaming platform")) {
+        let parent = node.parentElement;
+        if (parent) {
+          parent.style.display = 'none';
         }
-        target.style.setProperty('display', 'none', 'important');
-        target.style.setProperty('visibility', 'hidden', 'important');
-        try { target.remove(); } catch(e) {}
       }
-    });
+    }
   }
   
   function fixButtons() { 
@@ -293,7 +289,7 @@ async function proxyCloudMoon(request) {
     fixButtons();
     removeAds();
     removeCloudMoonText();
-  }, 50);
+  }, 200);
   
   var observer = new MutationObserver(function() {
     fixButtons();
@@ -525,10 +521,10 @@ function getMainHTML() {
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Edpuzzle">
-    <link rel="manifest" href="/manifest.json?v=4">
-    <link rel="apple-touch-icon" href="/favicon.png?v=4">
+    <link rel="manifest" href="/manifest.json?v=2">
+    <link rel="apple-touch-icon" href="/favicon.png?v=2">
     
-    <link rel="icon" id="favicon" type="image/x-icon" href="/favicon.png?v=4">
+    <link rel="icon" id="favicon" type="image/x-icon" href="/favicon.png?v=2">
     <style>
         * {
             margin: 0;
@@ -842,13 +838,13 @@ function getManifest() {
     "orientation": "any",
     "icons": [
       {
-        "src": "/icon-192.png?v=4",
+        "src": "/icon-192.png?v=2",
         "sizes": "192x192",
         "type": "image/x-icon",
         "purpose": "any"
       },
       {
-        "src": "/icon-512.png?v=4",
+        "src": "/icon-512.png?v=2",
         "sizes": "512x512",
         "type": "image/x-icon",
         "purpose": "any"
@@ -861,8 +857,8 @@ function getManifest() {
 __name(getManifest, "getManifest");
 function getServiceWorker() {
   return `// CloudMoon InPlay Service Worker
-const CACHE_NAME = 'cloudmoon-v6';
-const RUNTIME_CACHE = 'cloudmoon-runtime-v6';
+const CACHE_NAME = 'cloudmoon-v4';
+const RUNTIME_CACHE = 'cloudmoon-runtime-v4';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
