@@ -592,8 +592,8 @@ function getMainHTML() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - Classroom</title>
-    <meta name="description" content="Play Roblox, Fortnite, Call of Duty Mobile, Delta Force, and more in your browser">
+    <title>Edpuzzle Help Center</title>
+    <meta name="description" content="">
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#2d2d2d">
